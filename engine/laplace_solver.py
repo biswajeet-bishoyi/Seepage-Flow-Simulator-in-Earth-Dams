@@ -142,8 +142,10 @@ def apply_boundary_conditions(
     # Upstream face — Dirichlet
     h[:, 0] = H_u
 
-    # Downstream face — Dirichlet (full height for simplified model)
-    h[:, -1] = H_d
+    # Downstream face — Dirichlet (seepage face properly modeled)
+    for j in range(Ny):
+        y_elevation = j * (H_u / (Ny - 1))
+        h[j, -1] = max(H_d, y_elevation)
 
     # Base — Neumann (no-flow, zero normal gradient)
     h[0, :] = h[1, :]
@@ -311,7 +313,8 @@ def build_and_solve_sparse(
             # Downstream face — Dirichlet
             elif i == Nx - 1:
                 A[idx, idx] = 1.0
-                b[idx] = H_d
+                y_elev = j * dy
+                b[idx] = max(H_d, y_elev)
                 is_bc = True
 
             # Base — Neumann (no-flow): h[0,i] = h[1,i]
