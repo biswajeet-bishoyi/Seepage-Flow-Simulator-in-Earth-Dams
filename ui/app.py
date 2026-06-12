@@ -230,8 +230,17 @@ with st.spinner("🔄 Solving Laplace equation..."):
     # 1. Compute phreatic line
     phreatic_x, phreatic_y = compute_phreatic_line_for_dam(H_u, H_d, L, m_u)
 
+    # 1b. Compute dam profile to bound the phreatic line
+    dam_x, dam_y = compute_dam_profile(H_u, W, m_u, m_d)
+    
     # 2. Convert to grid indices for masking
-    phreatic_j = phreatic_to_grid_indices(phreatic_y, phreatic_x, Nx, Ny, L, H_u)
+    x_coords, y_coords, dx, dy = create_grid(Nx, Ny, L, H_u)
+    dam_y_interp = np.interp(x_coords, dam_x, dam_y)
+    phreatic_y_interp = np.interp(x_coords, phreatic_x, phreatic_y)
+    
+    # The effective saturated boundary is the minimum of the phreatic line and the dam surface
+    effective_phreatic_y = np.minimum(phreatic_y_interp, dam_y_interp)
+    phreatic_j = phreatic_to_grid_indices(effective_phreatic_y, x_coords, Nx, Ny, L, H_u)
 
     # 3. Solve Laplace equation
     h, iterations, residual, converged = solve_laplace(
@@ -239,9 +248,8 @@ with st.spinner("🔄 Solving Laplace equation..."):
         phreatic_j=phreatic_j,
     )
 
-    # 4. Create grid coordinates
-    x_coords, y_coords, dx, dy = create_grid(Nx, Ny, L, H_u)
-
+    # 4. (create_grid moved up)
+    
     # 5. Compute derived quantities
     q = compute_seepage_discharge(k, H_u, H_d, L)
     v_x, v_y = compute_velocity_field(h, k, dx, dy)
@@ -253,8 +261,7 @@ with st.spinner("🔄 Solving Laplace equation..."):
     v_s = compute_seepage_velocity(k, i_e)
     fs_heave = compute_heave_fs(h, dy)
 
-    # 6. Dam profile
-    dam_x, dam_y = compute_dam_profile(H_u, W, m_u, m_d)
+    # 6. (dam profile computed above)
 
     # 7. Track q history
     st.session_state.q_history.append(q)
