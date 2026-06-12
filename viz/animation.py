@@ -40,7 +40,10 @@ def create_particle_animation(
     v_max = float(np.max(v_mag)) if np.max(v_mag) > 0 else 1.0
     dt = dt_scale * dx_val / v_max if v_max > 0 else 1.0
 
-    max_y_seed = float(phreatic_y_interp[0]) if phreatic_y_interp is not None else y_max
+    max_y_seed = float(h[0, 0]) if h is not None else y_max
+    # Or actually, we have h array, h[0, 0] is basically H_u. 
+    # But wait, h is passed. We can just use np.max(h[:, 0]).
+    max_y_seed = float(np.max(h[:, 0])) if h is not None else y_max
     particle_x = np.zeros(n_particles)
     particle_y = np.linspace(dy_val, min(max_y_seed, y_max - dy_val), n_particles)
 
